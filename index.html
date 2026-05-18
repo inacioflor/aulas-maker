@@ -1,0 +1,553 @@
+<style>
+  .post-body, .post-body-container, .post-outer, 
+  .post-inner, .post, #Blog1 {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: unset !important;
+  }
+</style>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8"></meta>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"></meta>
+    <title>Desafio Arquiteto Real - 10 de 40</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Space+Grotesk:wght@700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            color: #1e40af;
+        }
+
+        .quiz-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 24px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-answer {
+            background: white;
+            border: 2px solid #1e40af;
+            color: #1e40af;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-answer:hover {
+            background: #1e40af;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .hidden { display: none; }
+
+        .heart {
+            color: #ef4444;
+            display: inline-block;
+            margin: 0 2px;
+        }
+
+        .result-box {
+            border: 3px solid #1e40af;
+            background: #eff6ff;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-3xl mx-auto">
+        <!-- Tela Inicial -->
+        <div class="text-center py-12" id="start-screen">
+            <h1 class="text-5xl font-black mb-6 text-blue-800" style="font-family: 'Space Grotesk', sans-serif;">DESAFIO DO REI</h1>
+            <p class="text-xl mb-4 text-blue-600 font-bold uppercase tracking-widest">Missão: Conquistar o Reino</p>
+            
+            <div class="bg-yellow-50 border-2 border-yellow-200 p-6 rounded-2xl mb-8 text-left">
+                <p class="text-yellow-800 font-bold mb-2">⚠️ REQUISITO OBRIGATÓRIO:</p>
+                <p class="text-sm text-yellow-700">Você já conquistou o <strong>Mapa do Reino</strong>? Se não, clique abaixo para realizar a atividade antes de jogar:</p>
+                <a class="text-blue-700 underline font-bold text-sm block mt-2" href="https://aulasmaker.blogspot.com/2026/03/criando-mapa-do-jogo-rpg-meu-mundinho.html" target="_blank">Fazer Atividade do Mapa 🗺️</a>
+            </div>
+
+            <button class="bg-blue-700 text-white font-bold py-5 px-12 rounded-full text-2xl hover:bg-blue-800 transition-all shadow-xl" onclick="startGame()">
+                TENHO O MAPA E QUERO JOGAR! ⚔️
+            </button>
+        </div>
+
+        <!-- Tela de Jogo -->
+        <div class="quiz-card p-8 hidden" id="game-screen">
+            <div class="flex justify-between items-center mb-8 border-b pb-4">
+                <div class="text-lg font-bold">Nível: <span class="text-2xl text-blue-800" id="current-index">1</span>/10</div>
+                <div class="text-2xl" id="lives-container"></div>
+            </div>
+
+            <div class="text-2xl font-bold mb-8 leading-tight text-slate-800" id="question-text"></div>
+            <div class="grid gap-4" id="options-grid"></div>
+            
+            <div class="mt-8 text-right text-sm font-semibold text-blue-400">
+                Sucessos: <span id="current-score">0</span>
+            </div>
+        </div>
+
+        <!-- Tela de Resultado -->
+        <div class="text-center py-12 hidden" id="result-screen">
+            <div class="text-8xl mb-6" id="result-emoji"></div>
+            <h2 class="text-4xl font-black mb-4" id="result-title"></h2>
+            
+            <div class="result-box text-left mb-8" id="mission-box">
+                <!-- Missão específica por nota aparece aqui -->
+            </div>
+
+            <button class="bg-blue-700 text-white font-bold py-4 px-10 rounded-full text-xl hover:bg-blue-800 transition-all" onclick="location.reload()">
+                Reiniciar Desafio 🔄
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const questionBank = [
+            { q: "O sol nasce sempre na direção:", a: ["Norte", "Sul", "Leste", "Oeste"], c: 2 },
+            { q: "O sol se põe na direção:", a: ["Norte", "Sul", "Leste", "Oeste"], c: 3 },
+            { q: "Qual ponto cardeal fica oposto ao Norte?", a: ["Leste", "Sul", "Oeste", "Nordeste"], c: 1 },
+            { q: "A bússola utiliza o magnetismo para apontar para o:", a: ["Leste", "Sul", "Norte", "Oeste"], c: 2 },
+            { q: "Se você aponta o braço direito para onde o sol nasce, sua frente será o:", a: ["Norte", "Sul", "Leste", "Oeste"], c: 0 },
+            { q: "O sol do meio-dia no Brasil, geralmente, está mais posicionado ao:", a: ["Leste", "Oeste", "Norte", "Sul"], c: 2 },
+            { q: "Qual o melhor lado para janelas de quartos em climas frios?", a: ["Sul", "Norte", "Leste", "Oeste"], c: 1 },
+            { q: "O 'Zênite' é o ponto do sol exatamente:", a: ["No horizonte", "Abaixo da terra", "Acima da nossa cabeça", "Ao Sul"], c: 2 },
+            { q: "O movimento aparente do sol ocorre de:", a: ["Oeste para Leste", "Norte para Sul", "Leste para Oeste", "Sul para Norte"], c: 2 },
+            { q: "Qual estação tem o sol mais baixo no horizonte?", a: ["Verão", "Inverno", "Primavera", "Outono"], c: 1 },
+            { q: "Na escala 1:100, 1cm no papel representa:", a: ["1 metro", "10 metros", "100 metros", "10 centímetros"], c: 0 },
+            { q: "Qual escala é de 'Tamanho Real'?", a: ["1:50", "1:1", "1:10", "2:1"], c: 1 },
+            { q: "Uma escala de 2:1 é uma escala de:", a: ["Redução", "Igualdade", "Ampliação", "Cor"], c: 2 },
+            { q: "Na escala 1:50, uma parede de 5 metros terá quantos cm no papel?", a: ["5cm", "10cm", "50cm", "1cm"], c: 1 },
+            { q: "O escalímetro serve para:", a: ["Bater prego", "Medir em diferentes escalas", "Desenhar círculos", "Cortar papel"], c: 1 },
+            { q: "Qual escala mostra MAIS detalhes de um móvel?", a: ["1:100", "1:50", "1:20", "1:500"], c: 2 },
+            { q: "Se dobrarmos a escala (de 1:100 para 1:50), o desenho fica:", a: ["Menor", "Maior", "Igual", "Invisível"], c: 1 },
+            { q: "Escala é a relação entre a medida do desenho e a medida:", a: ["Da régua", "Do papel", "Real", "Do lápis"], c: 2 },
+            { q: "Qual escala é comum em mapas de cidades?", a: ["1:50", "1:100", "1:10.000", "1:1"], c: 2 },
+            { q: "Em 1:20, um objeto de 20cm reais terá quanto no papel?", a: ["20cm", "10cm", "1cm", "2cm"], c: 2 },
+            { q: "A 'Planta Baixa' é qual tipo de vista?", a: ["Frontal", "Lateral", "Superior", "Inferior"], c: 2 },
+            { q: "A 'Fachada' de uma casa é a vista:", a: ["Superior", "Frontal", "Planta", "Corte"], c: 1 },
+            { q: "Quantas vistas principais tem o desenho técnico básico?", a: ["1", "3", "6", "10"], c: 1 },
+            { q: "A vista que mostra a altura e a largura de frente é a:", a: ["Planta", "Lateral", "Frontal", "Posterior"], c: 2 },
+            { q: "A vista que mostra a profundidade e a altura é a:", a: ["Frontal", "Lateral", "Superior", "Céu"], c: 1 },
+            { q: "O desenho que 'corta' a casa ao meio para ver dentro chama-se:", a: ["Planta", "Fachada", "Corte", "Croqui"], c: 2 },
+            { q: "As linhas de 'Cota' servem para indicar:", a: ["Cores", "Materiais", "Medidas", "Nomes"], c: 2 },
+            { q: "O símbolo Ø indica que a medida é de um:", a: ["Quadrado", "Triângulo", "Diâmetro (Círculo)", "Norte"], c: 2 },
+            { q: "Perspectiva Isométrica é um desenho em:", a: ["2D", "3D", "Preto e branco", "Escala real"], c: 1 },
+            { q: "As linhas tracejadas no desenho geralmente indicam:", a: ["Paredes grossas", "Partes escondidas", "Caminhos", "Água"], c: 1 },
+            { q: "Madeira é considerada um material:", a: ["Sintético", "Natural", "Mineral", "Químico"], c: 1 },
+            { q: "O plástico é um material:", a: ["Natural", "Sintético", "Orgânico", "Primário"], c: 1 },
+            { q: "Qual destes é um material renovável?", a: ["Pedra", "Cimento", "Madeira de reflorestamento", "Ferro"], c: 2 },
+            { q: "A impressora 3D utiliza qual método?", a: ["Subtração", "Adição de camadas", "Escultura", "Pintura"], c: 1 },
+            { q: "O que significa o termo 'Maker'?", a: ["Comprador", "Criador/Fazedor", "Destruidor", "Vendedor"], c: 1 },
+            { q: "Qual material é melhor para isolamento térmico natural?", a: ["Aço", "Vidro", "Adobe/Barro", "Alumínio"], c: 2 },
+            { q: "O processo de prototipagem serve para:", a: ["Vender o produto", "Testar a ideia", "Gastar material", "Finalizar o prédio"], c: 1 },
+            { q: "Argila é a matéria-prima de qual material?", a: ["Vidro", "Plástico", "Tijolo/Cerâmica", "Papel"], c: 2 },
+            { q: "O aço é uma liga metálica feita principalmente de:", a: ["Cobre", "Ferro e Carbono", "Ouro", "Plástico"], c: 1 },
+            { q: "Para colar papelão de forma rápida em maquetes usamos:", a: ["Cimento", "Cola Quente", "Água", "Fita crepe"], c: 1 }
+        ];
+
+        let gameQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let lives = 3;
+
+        function startGame() {
+            // Sorteia 10 questões aleatórias do banco de 40
+            gameQuestions = [...questionBank].sort(() => Math.random() - 0.5).slice(0, 10);
+            currentIndex = 0;
+            score = 0;
+            lives = 3;
+            
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            updateLives();
+            showQuestion();
+        }
+
+        function updateLives() {
+            const container = document.getElementById('lives-container');
+            container.innerHTML = "";
+            for(let i=0; i<3; i++) {
+                const span = document.createElement('span');
+                span.className = "heart";
+                span.innerText = i < lives ? "❤️" : "🖤";
+                container.appendChild(span);
+            }
+        }
+
+        function showQuestion() {
+            if (currentIndex >= 10 || lives <= 0) {
+                endGame();
+                return;
+            }
+
+            const q = gameQuestions[currentIndex];
+            document.getElementById('current-index').innerText = currentIndex + 1;
+            document.getElementById('current-score').innerText = score;
+            document.getElementById('question-text').innerText = q.q;
+
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = "";
+
+            q.a.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = "btn-answer p-5 rounded-xl text-left font-bold text-lg";
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(i);
+                grid.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selected) {
+            const correct = gameQuestions[currentIndex].c;
+            
+            if (selected === correct) {
+                score++;
+            } else {
+                lives--;
+                updateLives();
+                if (lives <= 0) {
+                    endGame();
+                    return;
+                }
+            }
+            currentIndex++;
+            showQuestion();
+        }
+
+        function endGame() {
+            document.getElementById('game-screen').classList.add('hidden');
+            const screen = document.getElementById('result-screen');
+            screen.classList.remove('hidden');
+
+            const emoji = document.getElementById('result-emoji');
+            const title = document.getElementById('result-title');
+            const missionBox = document.getElementById('mission-box');
+
+            let missionHTML = "";
+
+            if (lives <= 0) {
+                emoji.innerText = "🧱";
+                title.innerText = "Recursos Esgotados!";
+                missionHTML = `<p class="font-bold text-red-700">Você não conseguiu concluir a prova. Revise a sequência didática e tente novamente quando estiver preparado.</p>`;
+            } else if (score === 8) {
+                emoji.innerText = "🧱";
+                title.innerText = "Guarda do Reino (Nota 8)";
+                missionHTML = `
+                    <p class="font-bold text-blue-800 mb-2">SUA MISSÃO MAKER:</p>
+                    <p>Você foi designado para a segurança! Sua tarefa é <strong>construir os muros e o portão principal do reino</strong>.</p>
+                    <p class="mt-2 text-sm italic">Dica: Use materiais resistentes para o portão.</p>
+                `;
+            } else if (score === 9) {
+                emoji.innerText = "🏰";
+                title.innerText = "Arquiteto Real (Nota 9)";
+                missionHTML = `
+                    <p class="font-bold text-blue-800 mb-2">SUA MISSÃO MAKER:</p>
+                    <p>O Rei aprovou seu projeto! Sua tarefa é <strong>construir o Castelo Principal</strong>, respeitando as vistas frontal e superior.</p>
+                `;
+            } else if (score === 10) {
+                emoji.innerText = "👑";
+                title.innerText = "Mestre Arquiteto (Nota 10)";
+                missionHTML = `
+                    <p class="font-bold text-blue-800 mb-2">DESAFIO DO REI:</p>
+                    <p>Perfeição técnica! Como Mestre, você deve <strong>definir o melhor local no mapa</strong> para a construção do Castelo e supervisionar o projeto.</p>
+                    <p class="mt-4 p-3 bg-white rounded border border-blue-200 text-sm">
+                        <strong>Lembre-se:</strong> Esta missão só pode ser feita se você já conquistou o Mapa. Caso contrário, faça agora: 
+                        <a href="https://aulasmaker.blogspot.com/2026/03/criando-mapa-do-jogo-rpg-meu-mundinho.html" target="_blank" class="text-blue-700 underline">Mapa RPG Meu Mundinho</a>
+                    </p>
+                `;
+            } else {
+                emoji.innerText = "📜";
+                title.innerText = `Resultado: ${score}/10`;
+                missionHTML = `<p>Para receber uma missão de construção, você precisa acertar pelo menos 8 questões. Tente novamente!</p>`;
+            }
+
+            missionBox.innerHTML = missionHTML;
+        }
+    </script>
+</body>
+</html><style>
+  .post-body, .post-body-container, .post-outer, 
+  .post-inner, .post, #Blog1 {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: unset !important;
+  }
+</style>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8"></meta>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"></meta>
+    <title>Desafio Arquiteto Real - 10 de 40</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Space+Grotesk:wght@700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            color: #1e40af;
+        }
+
+        .quiz-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 24px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-answer {
+            background: white;
+            border: 2px solid #1e40af;
+            color: #1e40af;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-answer:hover {
+            background: #1e40af;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .hidden { display: none; }
+
+        .heart {
+            color: #ef4444;
+            display: inline-block;
+            margin: 0 2px;
+        }
+
+        .result-box {
+            border: 3px solid #1e40af;
+            background: #eff6ff;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-3xl mx-auto">
+        <!-- Tela Inicial -->
+        <div class="text-center py-12" id="start-screen">
+            <h1 class="text-5xl font-black mb-6 text-blue-800" style="font-family: 'Space Grotesk', sans-serif;">DESAFIO DO REI</h1>
+            <p class="text-xl mb-4 text-blue-600 font-bold uppercase tracking-widest">Missão: Conquistar o Reino</p>
+            
+            <div class="bg-yellow-50 border-2 border-yellow-200 p-6 rounded-2xl mb-8 text-left">
+                <p class="text-yellow-800 font-bold mb-2">⚠️ REQUISITO OBRIGATÓRIO:</p>
+                <p class="text-sm text-yellow-700">Você já conquistou o <strong>Mapa do Reino</strong>? Se não, clique abaixo para realizar a atividade antes de jogar:</p>
+                <a class="text-blue-700 underline font-bold text-sm block mt-2" href="https://aulasmaker.blogspot.com/2026/03/criando-mapa-do-jogo-rpg-meu-mundinho.html" target="_blank">Fazer Atividade do Mapa 🗺️</a>
+            </div>
+
+            <button class="bg-blue-700 text-white font-bold py-5 px-12 rounded-full text-2xl hover:bg-blue-800 transition-all shadow-xl" onclick="startGame()">
+                TENHO O MAPA E QUERO JOGAR! ⚔️
+            </button>
+        </div>
+
+        <!-- Tela de Jogo -->
+        <div class="quiz-card p-8 hidden" id="game-screen">
+            <div class="flex justify-between items-center mb-8 border-b pb-4">
+                <div class="text-lg font-bold">Nível: <span class="text-2xl text-blue-800" id="current-index">1</span>/10</div>
+                <div class="text-2xl" id="lives-container"></div>
+            </div>
+
+            <div class="text-2xl font-bold mb-8 leading-tight text-slate-800" id="question-text"></div>
+            <div class="grid gap-4" id="options-grid"></div>
+            
+            <div class="mt-8 text-right text-sm font-semibold text-blue-400">
+                Sucessos: <span id="current-score">0</span>
+            </div>
+        </div>
+
+        <!-- Tela de Resultado -->
+        <div class="text-center py-12 hidden" id="result-screen">
+            <div class="text-8xl mb-6" id="result-emoji"></div>
+            <h2 class="text-4xl font-black mb-4" id="result-title"></h2>
+            
+            <div class="result-box text-left mb-8" id="mission-box">
+                <!-- Missão específica por nota aparece aqui -->
+            </div>
+
+            <button class="bg-blue-700 text-white font-bold py-4 px-10 rounded-full text-xl hover:bg-blue-800 transition-all" onclick="location.reload()">
+                Reiniciar Desafio 🔄
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const questionBank = [
+            { q: "O sol nasce sempre na direção:", a: ["Norte", "Sul", "Leste", "Oeste"], c: 2 },
+            { q: "O sol se põe na direção:", a: ["Norte", "Sul", "Leste", "Oeste"], c: 3 },
+            { q: "Qual ponto cardeal fica oposto ao Norte?", a: ["Leste", "Sul", "Oeste", "Nordeste"], c: 1 },
+            { q: "A bússola utiliza o magnetismo para apontar para o:", a: ["Leste", "Sul", "Norte", "Oeste"], c: 2 },
+            { q: "Se você aponta o braço direito para onde o sol nasce, sua frente será o:", a: ["Norte", "Sul", "Leste", "Oeste"], c: 0 },
+            { q: "O sol do meio-dia no Brasil, geralmente, está mais posicionado ao:", a: ["Leste", "Oeste", "Norte", "Sul"], c: 2 },
+            { q: "Qual o melhor lado para janelas de quartos em climas frios?", a: ["Sul", "Norte", "Leste", "Oeste"], c: 1 },
+            { q: "O 'Zênite' é o ponto do sol exatamente:", a: ["No horizonte", "Abaixo da terra", "Acima da nossa cabeça", "Ao Sul"], c: 2 },
+            { q: "O movimento aparente do sol ocorre de:", a: ["Oeste para Leste", "Norte para Sul", "Leste para Oeste", "Sul para Norte"], c: 2 },
+            { q: "Qual estação tem o sol mais baixo no horizonte?", a: ["Verão", "Inverno", "Primavera", "Outono"], c: 1 },
+            { q: "Na escala 1:100, 1cm no papel representa:", a: ["1 metro", "10 metros", "100 metros", "10 centímetros"], c: 0 },
+            { q: "Qual escala é de 'Tamanho Real'?", a: ["1:50", "1:1", "1:10", "2:1"], c: 1 },
+            { q: "Uma escala de 2:1 é uma escala de:", a: ["Redução", "Igualdade", "Ampliação", "Cor"], c: 2 },
+            { q: "Na escala 1:50, uma parede de 5 metros terá quantos cm no papel?", a: ["5cm", "10cm", "50cm", "1cm"], c: 1 },
+            { q: "O escalímetro serve para:", a: ["Bater prego", "Medir em diferentes escalas", "Desenhar círculos", "Cortar papel"], c: 1 },
+            { q: "Qual escala mostra MAIS detalhes de um móvel?", a: ["1:100", "1:50", "1:20", "1:500"], c: 2 },
+            { q: "Se dobrarmos a escala (de 1:100 para 1:50), o desenho fica:", a: ["Menor", "Maior", "Igual", "Invisível"], c: 1 },
+            { q: "Escala é a relação entre a medida do desenho e a medida:", a: ["Da régua", "Do papel", "Real", "Do lápis"], c: 2 },
+            { q: "Qual escala é comum em mapas de cidades?", a: ["1:50", "1:100", "1:10.000", "1:1"], c: 2 },
+            { q: "Em 1:20, um objeto de 20cm reais terá quanto no papel?", a: ["20cm", "10cm", "1cm", "2cm"], c: 2 },
+            { q: "A 'Planta Baixa' é qual tipo de vista?", a: ["Frontal", "Lateral", "Superior", "Inferior"], c: 2 },
+            { q: "A 'Fachada' de uma casa é a vista:", a: ["Superior", "Frontal", "Planta", "Corte"], c: 1 },
+            { q: "Quantas vistas principais tem o desenho técnico básico?", a: ["1", "3", "6", "10"], c: 1 },
+            { q: "A vista que mostra a altura e a largura de frente é a:", a: ["Planta", "Lateral", "Frontal", "Posterior"], c: 2 },
+            { q: "A vista que mostra a profundidade e a altura é a:", a: ["Frontal", "Lateral", "Superior", "Céu"], c: 1 },
+            { q: "O desenho que 'corta' a casa ao meio para ver dentro chama-se:", a: ["Planta", "Fachada", "Corte", "Croqui"], c: 2 },
+            { q: "As linhas de 'Cota' servem para indicar:", a: ["Cores", "Materiais", "Medidas", "Nomes"], c: 2 },
+            { q: "O símbolo Ø indica que a medida é de um:", a: ["Quadrado", "Triângulo", "Diâmetro (Círculo)", "Norte"], c: 2 },
+            { q: "Perspectiva Isométrica é um desenho em:", a: ["2D", "3D", "Preto e branco", "Escala real"], c: 1 },
+            { q: "As linhas tracejadas no desenho geralmente indicam:", a: ["Paredes grossas", "Partes escondidas", "Caminhos", "Água"], c: 1 },
+            { q: "Madeira é considerada um material:", a: ["Sintético", "Natural", "Mineral", "Químico"], c: 1 },
+            { q: "O plástico é um material:", a: ["Natural", "Sintético", "Orgânico", "Primário"], c: 1 },
+            { q: "Qual destes é um material renovável?", a: ["Pedra", "Cimento", "Madeira de reflorestamento", "Ferro"], c: 2 },
+            { q: "A impressora 3D utiliza qual método?", a: ["Subtração", "Adição de camadas", "Escultura", "Pintura"], c: 1 },
+            { q: "O que significa o termo 'Maker'?", a: ["Comprador", "Criador/Fazedor", "Destruidor", "Vendedor"], c: 1 },
+            { q: "Qual material é melhor para isolamento térmico natural?", a: ["Aço", "Vidro", "Adobe/Barro", "Alumínio"], c: 2 },
+            { q: "O processo de prototipagem serve para:", a: ["Vender o produto", "Testar a ideia", "Gastar material", "Finalizar o prédio"], c: 1 },
+            { q: "Argila é a matéria-prima de qual material?", a: ["Vidro", "Plástico", "Tijolo/Cerâmica", "Papel"], c: 2 },
+            { q: "O aço é uma liga metálica feita principalmente de:", a: ["Cobre", "Ferro e Carbono", "Ouro", "Plástico"], c: 1 },
+            { q: "Para colar papelão de forma rápida em maquetes usamos:", a: ["Cimento", "Cola Quente", "Água", "Fita crepe"], c: 1 }
+        ];
+
+        let gameQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let lives = 3;
+
+        function startGame() {
+            // Sorteia 10 questões aleatórias do banco de 40
+            gameQuestions = [...questionBank].sort(() => Math.random() - 0.5).slice(0, 10);
+            currentIndex = 0;
+            score = 0;
+            lives = 3;
+            
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            updateLives();
+            showQuestion();
+        }
+
+        function updateLives() {
+            const container = document.getElementById('lives-container');
+            container.innerHTML = "";
+            for(let i=0; i<3; i++) {
+                const span = document.createElement('span');
+                span.className = "heart";
+                span.innerText = i < lives ? "❤️" : "🖤";
+                container.appendChild(span);
+            }
+        }
+
+        function showQuestion() {
+            if (currentIndex >= 10 || lives <= 0) {
+                endGame();
+                return;
+            }
+
+            const q = gameQuestions[currentIndex];
+            document.getElementById('current-index').innerText = currentIndex + 1;
+            document.getElementById('current-score').innerText = score;
+            document.getElementById('question-text').innerText = q.q;
+
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = "";
+
+            q.a.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = "btn-answer p-5 rounded-xl text-left font-bold text-lg";
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(i);
+                grid.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selected) {
+            const correct = gameQuestions[currentIndex].c;
+            
+            if (selected === correct) {
+                score++;
+            } else {
+                lives--;
+                updateLives();
+                if (lives <= 0) {
+                    endGame();
+                    return;
+                }
+            }
+            currentIndex++;
+            showQuestion();
+        }
+
+        function endGame() {
+            document.getElementById('game-screen').classList.add('hidden');
+            const screen = document.getElementById('result-screen');
+            screen.classList.remove('hidden');
+
+            const emoji = document.getElementById('result-emoji');
+            const title = document.getElementById('result-title');
+            const missionBox = document.getElementById('mission-box');
+
+            let missionHTML = "";
+
+            if (lives <= 0) {
+                emoji.innerText = "🧱";
+                title.innerText = "Recursos Esgotados!";
+                missionHTML = `<p class="font-bold text-red-700">Você não conseguiu concluir a prova. Revise a sequência didática e tente novamente quando estiver preparado.</p>`;
+            } else if (score === 8) {
+                emoji.innerText = "🧱";
+                title.innerText = "Guarda do Reino (Nota 8)";
+                missionHTML = `
+                    <p class="font-bold text-blue-800 mb-2">SUA MISSÃO MAKER:</p>
+                    <p>Você foi designado para a segurança! Sua tarefa é <strong>construir os muros e o portão principal do reino</strong>.</p>
+                    <p class="mt-2 text-sm italic">Dica: Use materiais resistentes para o portão.</p>
+                `;
+            } else if (score === 9) {
+                emoji.innerText = "🏰";
+                title.innerText = "Arquiteto Real (Nota 9)";
+                missionHTML = `
+                    <p class="font-bold text-blue-800 mb-2">SUA MISSÃO MAKER:</p>
+                    <p>O Rei aprovou seu projeto! Sua tarefa é <strong>construir o Castelo Principal</strong>, respeitando as vistas frontal e superior.</p>
+                `;
+            } else if (score === 10) {
+                emoji.innerText = "👑";
+                title.innerText = "Mestre Arquiteto (Nota 10)";
+                missionHTML = `
+                    <p class="font-bold text-blue-800 mb-2">DESAFIO DO REI:</p>
+                    <p>Perfeição técnica! Como Mestre, você deve <strong>definir o melhor local no mapa</strong> para a construção do Castelo e supervisionar o projeto.</p>
+                    <p class="mt-4 p-3 bg-white rounded border border-blue-200 text-sm">
+                        <strong>Lembre-se:</strong> Esta missão só pode ser feita se você já conquistou o Mapa. Caso contrário, faça agora: 
+                        <a href="https://aulasmaker.blogspot.com/2026/03/criando-mapa-do-jogo-rpg-meu-mundinho.html" target="_blank" class="text-blue-700 underline">Mapa RPG Meu Mundinho</a>
+                    </p>
+                `;
+            } else {
+                emoji.innerText = "📜";
+                title.innerText = `Resultado: ${score}/10`;
+                missionHTML = `<p>Para receber uma missão de construção, você precisa acertar pelo menos 8 questões. Tente novamente!</p>`;
+            }
+
+            missionBox.innerHTML = missionHTML;
+        }
+    </script>
+</body>
+</html>
